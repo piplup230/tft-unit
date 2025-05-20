@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ユニットパターンチェッカー</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 2rem;
+    }
+    .unit-group {
+      margin-bottom: 1rem;
+    }
+    .unit-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+    }
+    .unit-list label {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      white-space: nowrap;
+    }
+    .unit-list img {
+      width: 24px;
+      height: 24px;
+    }
+    button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+    }
+    .results {
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>ユニットパターンチェッカー</h1>
+  <p>手持ちのユニットを選択してください：</p>
+
+  <div class="unit-group"><strong>コスト1</strong><div class="unit-list" id="cost1"></div></div>
+  <div class="unit-group"><strong>コスト2</strong><div class="unit-list" id="cost2"></div></div>
+  <div class="unit-group"><strong>コスト3</strong><div class="unit-list" id="cost3"></div></div>
+  <div class="unit-group"><strong>コスト4</strong><div class="unit-list" id="cost4"></div></div>
+
+  <button onclick="checkPatterns()">チェック</button>
+
+  <div class="results" id="results"></div>
+
+  <script>
+    const unitGroups = {
+      cost1: ["ムンド", "アリスター", "ポッピー", "ザイラ", "ジャックス", "キンドレッド", "モルガナ", "コグマウ"],
+      cost2: ["グレイブス", "ジン", "ラースト", "シヴァーナ", "スカーナー", "ベイガー"],
+      cost3: ["エリス", "フィドル", "グラガス", "J4", "ジンクス", "モルデ", "レンガー"],
+      cost4: ["アフェリオス", "ゼリ", "ヴェックス"]
+    };
+
+    const patterns = {
+      1: ["ムンド", "アリスター", "ポッピー", "ラースト", "シヴァーナ", "ベイガー", "J4"],
+      2: ["ムンド", "ザイラ", "グレイブス", "ラースト", "J4", "モルデ", "レンガー"],
+      3: ["ムンド", "ザイラ", "ラースト", "J4", "ジンクス", "モルデ", "アフェリオス"],
+      4: ["ジャックス", "キンドレッド", "ジン", "シヴァーナ", "エリス", "グラガス", "モルデ"],
+      5: ["キンドレッド", "ジン", "シヴァーナ", "エリス", "グラガス", "モルデ", "ゼリ"],
+      6: ["アリスター", "ジャックス", "キンドレッド", "モルガナ", "ジン", "シヴァーナ", "モルデ", "アフェリオス"],
+      7: ["ムンド", "キンドレッド", "コグマウ", "スカーナー", "グラガス", "J4", "アフェリオス"],
+      8: ["ムンド", "グレイブス", "スカーナー", "フィドル", "J4", "モルデ", "ヴェックス"]
+    };
+
+    const unitToLetter = {
+      "ムンド": "A", "アリスター": "B", "ポッピー": "C", "ザイラ": "D", "ジャックス": "E", "キンドレッド": "F", "モルガナ": "G", "コグマウ": "H",
+      "グレイブス": "I", "ジン": "J", "ラースト": "K", "シヴァーナ": "L", "スカーナー": "M", "ベイガー": "N",
+      "エリス": "O", "フィドル": "P", "グラガス": "Q", "J4": "R", "ジンクス": "S", "モルデ": "T", "レンガー": "U",
+      "アフェリオス": "V", "ゼリ": "W", "ヴェックス": "X"
+    };
+
+    Object.entries(unitGroups).forEach(([group, names]) => {
+      const container = document.getElementById(group);
+      names.forEach(name => {
+        const letter = unitToLetter[name];
+        const label = document.createElement('label');
+        label.innerHTML = `<input type="checkbox" value="${name}">` +
+                          `<img src="images/${letter}.png" alt="${name}" title="${name}">` +
+                          `${name}`;
+        container.appendChild(label);
+      });
+    });
+
+    function checkPatterns() {
+      const selected = new Set([...document.querySelectorAll('input[type=checkbox]:checked')].map(cb => cb.value));
+      const resultDiv = document.getElementById('results');
+      let results = [];
+
+      for (const [pNum, units] of Object.entries(patterns)) {
+        const missing = units.filter(u => !selected.has(u));
+        results.push({ pNum, missing, completed: missing.length === 0 });
+      }
+
+      results.sort((a, b) => a.missing.length - b.missing.length);
+
+      resultDiv.innerHTML = results.map(r => {
+        return `<div><strong>パターン${r.pNum}</strong>：` +
+               (r.completed ? '✅ 完成済み！' : `あと ${r.missing.length} → ${r.missing.join(', ')}`) +
+               `</div>`;
+      }).join('');
+    }
+  </script>
+</body>
+</html>
