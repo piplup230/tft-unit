@@ -2,59 +2,77 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>ユニットパターンチェッカー</title>
+  <title>特性トラッカー検索</title>
   <style>
     body {
       font-family: sans-serif;
       margin: 2rem;
     }
-    .unit-group {
-      margin-bottom: 1rem;
+    .unit-section {
+      margin-bottom: 1.5rem;
     }
     .unit-list {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.5rem 1rem;
+      gap: 0.25rem 0.25rem;
+      margin-bottom: 1rem;
     }
     .unit-list label {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 0.25rem;
-      white-space: nowrap;
+      cursor: pointer;
+    }
+    .unit-list input[type="checkbox"] {
+      display: none;
     }
     .unit-list img {
-      width: 24px;
-      height: 24px;
+      width: 80px;
+      height: 80px;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
-    button {
-      margin-top: 1rem;
-      padding: 0.5rem 1rem;
+    .unit-list input[type="checkbox"]:checked + img {
+      border-color: #28a745;
+      box-shadow: 0 0 10px #28a745;
     }
     .results {
       margin-top: 2rem;
     }
+    .result-unit {
+      display: inline-block;
+      margin-right: 0.5rem;
+    }
+    .result-unit img {
+      width: 80px;
+      height: 80px;
+    }
   </style>
 </head>
 <body>
-  <h1>ユニットパターンチェッカー</h1>
+  <h1>特性トラッカー検索</h1>
   <p>手持ちのユニットを選択してください：</p>
 
-  <div class="unit-group"><strong>コスト1</strong><div class="unit-list" id="cost1"></div></div>
-  <div class="unit-group"><strong>コスト2</strong><div class="unit-list" id="cost2"></div></div>
-  <div class="unit-group"><strong>コスト3</strong><div class="unit-list" id="cost3"></div></div>
-  <div class="unit-group"><strong>コスト4</strong><div class="unit-list" id="cost4"></div></div>
+  <div class="unit-section"><h3>コスト1</h3><div class="unit-list" id="cost1"></div></div>
+  <div class="unit-section"><h3>コスト2</h3><div class="unit-list" id="cost2"></div></div>
+  <div class="unit-section"><h3>コスト3</h3><div class="unit-list" id="cost3"></div></div>
+  <div class="unit-section"><h3>コスト4</h3><div class="unit-list" id="cost4"></div></div>
 
   <button onclick="checkPatterns()">チェック</button>
+  <button onclick="uncheckAll()">すべてのチェックを外す</button>
 
   <div class="results" id="results"></div>
 
   <script>
-    const unitGroups = {
-      cost1: ["ムンド", "アリスター", "ポッピー", "ザイラ", "ジャックス", "キンドレッド", "モルガナ", "コグマウ"],
-      cost2: ["グレイブス", "ジン", "ラースト", "シヴァーナ", "スカーナー", "ベイガー"],
-      cost3: ["エリス", "フィドル", "グラガス", "J4", "ジンクス", "モルデ", "レンガー"],
-      cost4: ["アフェリオス", "ゼリ", "ヴェックス"]
-    };
+    const unitNames = [
+      "ムンド", "アリスター", "ポッピー", "ザイラ", "ジャックス", "キンドレッド", "モルガナ", "コグマウ",
+      "グレイブス", "ジン", "ラースト", "シヴァーナ", "スカーナー", "ベイガー",
+      "エリス", "フィドル", "グラガス", "J4", "ジンクス", "モルデ", "レンガー",
+      "アフェリオス", "ゼリ", "ヴェックス"
+    ];
+
+    const unitKeys = Object.fromEntries(unitNames.map((name, i) => [name, String.fromCharCode(65 + i)]));
 
     const patterns = {
       1: ["ムンド", "アリスター", "ポッピー", "ラースト", "シヴァーナ", "ベイガー", "J4"],
@@ -67,23 +85,22 @@
       8: ["ムンド", "グレイブス", "スカーナー", "フィドル", "J4", "モルデ", "ヴェックス"]
     };
 
-    const unitToLetter = {
-      "ムンド": "A", "アリスター": "B", "ポッピー": "C", "ザイラ": "D", "ジャックス": "E", "キンドレッド": "F", "モルガナ": "G", "コグマウ": "H",
-      "グレイブス": "I", "ジン": "J", "ラースト": "K", "シヴァーナ": "L", "スカーナー": "M", "ベイガー": "N",
-      "エリス": "O", "フィドル": "P", "グラガス": "Q", "J4": "R", "ジンクス": "S", "モルデ": "T", "レンガー": "U",
-      "アフェリオス": "V", "ゼリ": "W", "ヴェックス": "X"
-    };
+    const cost1 = document.getElementById('cost1');
+    const cost2 = document.getElementById('cost2');
+    const cost3 = document.getElementById('cost3');
+    const cost4 = document.getElementById('cost4');
 
-    Object.entries(unitGroups).forEach(([group, names]) => {
-      const container = document.getElementById(group);
-      names.forEach(name => {
-        const letter = unitToLetter[name];
-        const label = document.createElement('label');
-        label.innerHTML = `<input type="checkbox" value="${name}">` +
-                          `<img src="images/${letter}.png" alt="${name}" title="${name}">` +
-                          `${name}`;
-        container.appendChild(label);
-      });
+    unitNames.forEach((name, i) => {
+      const key = String.fromCharCode(65 + i);
+      const label = document.createElement('label');
+      label.innerHTML = `
+        <input type="checkbox" value="${name}" id="unit-${key}">
+        <img src="images/${key}.png" alt="${name}">
+      `;
+      if (i < 8) cost1.appendChild(label);
+      else if (i < 14) cost2.appendChild(label);
+      else if (i < 21) cost3.appendChild(label);
+      else cost4.appendChild(label);
     });
 
     function checkPatterns() {
@@ -93,16 +110,27 @@
 
       for (const [pNum, units] of Object.entries(patterns)) {
         const missing = units.filter(u => !selected.has(u));
-        results.push({ pNum, missing, completed: missing.length === 0 });
+        const completed = missing.length === 0;
+        results.push({ pNum, missing, completed });
       }
 
       results.sort((a, b) => a.missing.length - b.missing.length);
 
       resultDiv.innerHTML = results.map(r => {
+        const unitImages = r.missing.map(u => {
+          const key = unitKeys[u];
+          return `<span class="result-unit"><img src="images/${key}.png" title="${u}" alt="${u}"></span>`;
+        }).join('');
+
         return `<div><strong>パターン${r.pNum}</strong>：` +
-               (r.completed ? '✅ 完成済み！' : `あと ${r.missing.length} → ${r.missing.join(', ')}`) +
+               (r.completed ? '✅ 完成済み！' : `あと ${r.missing.length} → ${unitImages}`) +
                `</div>`;
       }).join('');
+    }
+
+    function uncheckAll() {
+      document.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
+      document.getElementById('results').innerHTML = "";
     }
   </script>
 </body>
